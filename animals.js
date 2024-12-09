@@ -1,5 +1,5 @@
 class Hunter {
-  constructor(id, locationX, locationY) {
+  constructor(id, locationX, locationY, attackLength = 8) {
     this.id = id;
     this.locationX = locationX;
     this.locationY = locationY;
@@ -37,15 +37,16 @@ class Animal {
 
 class Leon extends Animal {
   static speed = 4;
-  constructor(id, locationX, locationY, ishunted = false, gender = null) {
+
+  constructor(id, locationX, locationY, ishunted = false, gender = null, attackLength = 5) {
     super(id, locationX, locationY, gender);
-    this.ishunted = ishunted;
+    this.ishunted = ishunted
   }
 }
 
 class Wolf extends Animal {
   static speed = 3;
-  constructor(id, locationX, locationY, ishunted = false, gender = null) {
+  constructor(id, locationX, locationY, ishunted = false, gender = null, attackLength = 4) {
     super(id, locationX, locationY, gender);
     this.ishunted = ishunted;
   }
