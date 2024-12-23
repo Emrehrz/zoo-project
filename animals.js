@@ -5,17 +5,30 @@ class Hunter {
     this.locationY = locationY;
     this.huntedAnimals = [];
     this.attackLength = attackLength
+    this._speed = 1
+  }
+  get speed() {
+    return this._speed
   }
 
-  move(maxX, maxY) {
-    const dx = getRandomStep(this.constructor.speed);
-    const dy = getRandomStep(this.constructor.speed);
+  set speed(value) {
+    this._speed = value
+  }
+  move() {
+    const [dx, dy] = this.getRandomMove();
 
-    // Keep new coordinates within bounds
-    this.locationX = Math.max(0, Math.min(maxX, this.locationX + dx));
-    this.locationY = Math.max(0, Math.min(maxY, this.locationY + dy));
+    this.locationX = Math.max(0, Math.min(500, this.locationX + dx));
+    this.locationY = Math.max(0, Math.min(500, this.locationY + dy));
   }
 
+  getRandomMove() {
+    const angle = Math.random() * 2 * Math.PI; // 0 ile 2*pi arasında bir açı
+
+    const dx = this.speed * Math.cos(angle);
+    const dy = this.speed * Math.sin(angle);
+
+    return [dx, dy];
+  }
 }
 
 class Animal {
