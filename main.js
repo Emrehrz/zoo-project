@@ -1,5 +1,23 @@
 import { Hunter, Lion, Wolf, Sheep, Cow, Chicken, Cock } from "./animals.js"
 
+let globalAnimalID = 1;
+
+function getNextID() {
+  return globalAnimalID++
+}
+
+
+function createAnimals(animalClass, count, hasGender = true) {
+  const animals = [];
+  const halfCount = Math.floor(count / 2);  // Yarı sayıda erkek ve dişi olacak şekilde ayarlıyoruz
+
+  for (let i = 0; i < count; i++) {
+    const gender = hasGender ? (i < halfCount ? 'male' : 'female') : null;  // İlk yarısı erkek, geri kalanı dişi
+    const animal = new animalClass(getNextID(), initialRandomLocation().x, initialRandomLocation().y, gender);
+    animals.push(animal);
+  }
+  return animals;
+}
 
 function initialRandomLocation() {
   let x, y
@@ -8,28 +26,6 @@ function initialRandomLocation() {
   y = Math.random() * 500
 
   return { x, y }
-}
-
-function createAnimals(animalClass, count, hasGender = true) {
-  const animals = [];
-  const halfCount = Math.floor(count / 2);  // Yarı sayıda erkek ve dişi olacak şekilde ayarlıyoruz
-
-  for (let i = 0; i < count; i++) {
-    const gender = hasGender ? (i < halfCount ? 'male' : 'female') : null;  // İlk yarısı erkek, geri kalanı dişi
-    const animal = new animalClass(i + 1, initialRandomLocation().x, initialRandomLocation().y, gender);
-    animals.push(animal);
-  }
-  return animals;
-}
-// baslangicta belirli sayida hayvanlari esit sayida cinsiyetlerde olustur. 
-
-function coupling(currentAnimal, animalArray) {
-  //hayvan avlanmis mi kontrol et
-
-  // hayvanin yakinlarindaki karsi cinsle arasindaki mesefayi kontrol et
-
-  // uygunsa ciftles ve hayvanin dizisine yeni hayvan ekle
-
 }
 
 const matingConfigurations = {
@@ -41,53 +37,79 @@ const matingConfigurations = {
   cock: 'chicken',  // Horoz tavukla çiftleşir
 };
 
-
-function mating(zooAnimals) {
-  const matingDistance = 3
-
-  zooAnimals.forEach((animal, index) => {
-    const { gender, locationX: ax, locationY: ay } = animal;
-
-    // Eğer hayvanın cinsiyeti yoksa (tavuk ve horoz için)
-    const hasGender = gender !== null;
-
-    const mateType = matingConfigurations[animal.constructor.name.toLowerCase()];
-
-    if (!mateType) return;
-
-    // Eşleşecek hayvanları bul
-    const potentialMates = zooAnimals.filter(other =>
-      other.constructor.name.toLowerCase() === mateType &&
-      (hasGender ? other.gender !== gender : true) &&  // Eğer cinsiyeti varsa karşı cins olmalı
-      !other.isHunted // Avlanmamış olmalı
-    );
-
-    potentialMates.forEach(mate => {
-      const { locationX: mx, locationY: my } = mate;
-
-      const distance = Math.sqrt((ax - mx) ** 2 + (ay - my) ** 2);
-
-      if (distance <= matingDistance) {  // 3 birim çiftleşme mesafesi
-        console.log(`${animal.constructor.name} çiftleşti`);
-
-        // Yeni hayvan yarat
-        const newAnimal = createAnimals(animal.constructor, 1, !hasGender)[0];  // Eğer cinsiyet varsa, cinsiyetli, yoksa cinsiyetsiz yarat
-        newAnimal.locationX = (ax + mx) / 2;  // Ortalamasını al
-        newAnimal.locationY = (ay + my) / 2;
-
-        zooAnimals.push(newAnimal);
-        // console.log(`Yeni ${animal.constructor.name} doğdu!`);
-      }
-    });
-  });
+function canMate(animal1, animal2) {
+  return (
+    (animal1.constructor === animal2.constructor) ||
+    (matingConfigurations[animal1.constructor.name.toLowerCase()] === animal2.constructor.name.toLowerCase())
+  )
 }
+
+function mating(zooAnimals, currentStep) {
+  const newAnimals = [];
+  const matedAnimals = new Set();  // Çiftleşen hayvanları takip eder
+
+  for (let i = 0; i < zooAnimals.length; i++) {
+    const animal1 = zooAnimals[i];
+
+    if (matedAnimals.has(animal1.id)) {
+      continue;
+    }
+
+    for (let j = i + 1; j < zooAnimals.length; j++) {
+      const animal2 = zooAnimals[j];
+
+      if (matedAnimals.has(animal2.id)) {
+        continue;
+      }
+
+      if (canMate(animal1, animal2) &&
+        animal1.gender !== animal2.gender &&
+        !animal1.isHunted && !animal2.isHunted &&
+        (currentStep - animal1.lastMatingStep > 5) &&
+        (currentStep - animal2.lastMatingStep > 5)) {
+
+        const distance = Math.sqrt(
+          (animal1.locationX - animal2.locationX) ** 2 +
+          (animal1.locationY - animal2.locationY) ** 2
+        );
+
+        if (distance <= 3) {
+          // console.log("\n");
+          // console.log(`${currentStep}. Adımda ${animal1.constructor.name} #${animal1.id} ve #${animal2.id} çiftleşti.`);
+          // console.log(`Animal 1: ${animal1.lastMatingStep} - Animal 2: ${animal2.lastMatingStep}`);
+
+          const gender = Math.random() > 0.5 ? 'male' : 'female';
+          const newAnimal = new animal1.constructor(
+            getNextID() + newAnimals.length + 1,
+            initialRandomLocation().x,
+            initialRandomLocation().y,
+            gender
+          );
+
+          newAnimals.push(newAnimal);
+          console.log(`Yeni doğan hayvan: ${newAnimal.constructor.name} #${newAnimal.id}`);
+
+          animal1.lastMatingStep = currentStep;
+          animal2.lastMatingStep = currentStep;
+
+          matedAnimals.add(animal1.id);
+          matedAnimals.add(animal2.id);
+
+          break;
+        }
+      }
+    }
+  }
+
+  return newAnimals;
+}
+
 
 const huntingConfigurations = {
   hunter: { preyList: ['sheep', 'cow', 'wolf', 'lion', 'chicken', 'cock'] },
   wolf: { preyList: ['sheep', 'chicken', 'cock'] },
   lion: { preyList: ['cow', 'sheep'] },
 }
-
 
 function hunting(hunter, allAnimals) {
   const hunterType = hunter.constructor.name.toLowerCase();
@@ -116,56 +138,8 @@ function hunting(hunter, allAnimals) {
   });
 }
 
+
 function simulation() {
-  const sheeps = createAnimals(Sheep, 30);  // 30 koyun
-  const cows = createAnimals(Cow, 10);     // 10 inek
-  const wolves = createAnimals(Wolf, 10);  // 10 kurt
-  const lions = createAnimals(Lion, 8);    // 8 aslan
-  const chickens = createAnimals(Chicken, 10, false);  // 10 tavuk (cinsiyet yok)
-  const cocks = createAnimals(Cock, 10, false);        // 10 horoz (cinsiyet yok)
-
-  const hunter = new Hunter(1, initialRandomLocation().x, initialRandomLocation().y);
-
-
-  // cows.forEach((cow) => cow.move())
-
-  // wolves.forEach((wolf) => wolf.move())
-
-  // lions.forEach((lion) => lion.move())
-
-  // chickens.forEach((chicken) => chicken.move())
-
-  // cocks.forEach((cock) => cock.move())
-
-  const sheeps1 = [
-    new Sheep(2, 102, 103),
-    new Sheep(3, 150, 150, null, true), // Bu hayvan zaten avlanmış
-  ];
-
-  let theLion = new Lion(3, 100, 100)
-
-  hunting(theLion)
-
-  for (let step = 0; step < 10; step++) {
-
-    // butun hayvanlari ve avciyi hareket ettir
-    hunter.move()
-
-    sheeps.forEach((sheep) => sheep.move())
-
-    // hunting(hunter, huntingConfigurations.hunter)
-    /*
-      Her adim sonunda:
-        avlama durumlarini kontrol et
-
-        daha sonra ciftesme durumlarini kontrol et
-
-      en sonunda avlanmis hayvanlari diziden cikart
-    */
-  }
-}
-
-function simulationTest() {
   const sheeps = createAnimals(Sheep, 30);
   const cows = createAnimals(Cow, 10);
   const wolves = createAnimals(Wolf, 10);
@@ -179,25 +153,35 @@ function simulationTest() {
   // Rastgele konumda bir avcı oluştur
   const hunter = new Hunter(1, initialRandomLocation().x, initialRandomLocation().y);
 
-  console.log(`Avlanmadan önce hayvan sayısı: ${zooAnimals.length}`);
-
   //avci hayvanlar
   let predators = [hunter, ...wolves, ...lions]
 
-  // Tüm avcı hayvanları sırayla avlanmaya gönder
-  predators.forEach(predator => {
-    hunting(predator, zooAnimals);
-  });
+  console.log(`Simulasyondan önce hayvan sayısı: ${zooAnimals.length}`);
 
-  // Çiftleşme
-  mating(zooAnimals);
+  for (let step = 0; step < 1000; step++) {
 
+    // Avcı ve hayvanları hareket ettir
+    hunter.move();
 
-  console.log(`Avlandıktan sonra kalan hayvan sayısı: ${zooAnimals.length}`);
+    zooAnimals.forEach(animal => {
+      animal.move();
+    });
 
+    // Avlanma
+    predators.forEach(predator => {
+      hunting(predator, zooAnimals);
+    });
+
+    // Çiftleşme
+    const newAnimals = mating(zooAnimals, step);  // Yeni hayvanları döndüren bir mating fonksiyonu
+
+    // Yeni doğan hayvanları adım sonunda ekle
+    zooAnimals.push(...newAnimals);
+  }
+  console.log(`Simulasyondan sonra kalan hayvan sayısı: ${zooAnimals.length}`);
 
 }
-simulationTest()
+simulation()
 
 
 

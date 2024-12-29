@@ -39,6 +39,7 @@ class Animal {
     this.gender = hasGender ? (gender || (Math.random() < 0.5 ? 'male' : 'female')) : null;
     this.isHunted = isHunted;
     this._speed = 0
+    this.lastMatingStep = -Infinity;
   }
 
   get speed() {
