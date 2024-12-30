@@ -1,6 +1,6 @@
 # zoo-project
 
-Javascript ile yazılmış hayvanat bahçesi simülasyonu. 500x500 X,Y koordinat düzleminde yer alan belirli hayvanlar ve avcı arasında avlanma ve hayvanların kendi arasında çiftleşme olaylarını simüle eder.
+JavaScript ile geliştirilen bu hayvanat bahçesi simülasyonu, 500x500'lük bir X,Y koordinat düzleminde gerçekleşir. Simülasyon, avcı ve hayvanlar arasındaki avlanma ile hayvanların kendi aralarında çiftleşme süreçlerini canlandırır.
 
 - **main.js**: Simülasyonun gerçekleştirildiği ana dosya. Programın başlangıç noktasıdır ve diğer bileşenleri bir araya getirir.
 
